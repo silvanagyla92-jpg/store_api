@@ -147,6 +147,28 @@ async def test_controller_patch_should_update_updated_at(
     assert new_updated_at > old_updated_at
 
 
+async def test_controller_patch_should_allow_update_updated_at(
+    client,
+    products_url,
+    product_inserted,
+):
+    updated_at = "2026-08-01T12:00:00"
+
+    response = await client.patch(
+        f"{products_url}{product_inserted.id}",
+        json={
+            "price": "7.500",
+            "updated_at": updated_at,
+        },
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    content = response.json()
+
+    assert content["updated_at"].startswith("2026-08-01T12:00:00")
+
+
 async def test_controller_delete_should_return_no_content(
     client,
     products_url,
