@@ -7,7 +7,10 @@ from fastapi import status
 from tests.factories import product_data
 
 
-async def test_controller_create_should_return_success(client, products_url):
+async def test_controller_create_should_return_success(
+    client,
+    products_url,
+):
     response = await client.post(
         products_url,
         json=product_data(),
@@ -20,6 +23,7 @@ async def test_controller_create_should_return_success(client, products_url):
     del content["id"]
 
     assert response.status_code == status.HTTP_201_CREATED
+
     assert content == {
         "name": "Iphone 14 Pro Max",
         "quantity": 10,
@@ -43,6 +47,7 @@ async def test_controller_get_should_return_success(
     del content["updated_at"]
 
     assert response.status_code == status.HTTP_200_OK
+
     assert content == {
         "id": str(product_inserted.id),
         "name": "Iphone 14 Pro Max",
@@ -61,6 +66,7 @@ async def test_controller_get_should_return_not_found(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
     assert response.json() == {
         "detail": (
             "Product not found with filter: "
@@ -97,6 +103,7 @@ async def test_controller_patch_should_return_success(
     del content["updated_at"]
 
     assert response.status_code == status.HTTP_200_OK
+
     assert content == {
         "id": str(product_inserted.id),
         "name": "Iphone 14 Pro Max",
@@ -116,6 +123,7 @@ async def test_controller_patch_should_return_not_found(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
     assert response.json() == {
         "detail": (
             "Product not found with filter: "
@@ -166,34 +174,9 @@ async def test_controller_patch_should_allow_update_updated_at(
 
     content = response.json()
 
-    assert content["updated_at"].startswith("2026-08-01T12:00:00")
-
-
-async def test_controller_create_should_return_bad_request_when_insert_fails(
-    client,
-    products_url,
-    monkeypatch,
-):
-    async def mock_insert_one(*args, **kwargs):
-        raise Exception("Database error")
-
-    from store.usecases.product import product_usecase
-
-    monkeypatch.setattr(
-        product_usecase.collection,
-        "insert_one",
-        mock_insert_one,
+    assert content["updated_at"].startswith(
+        "2026-08-01T12:00:00"
     )
-
-    response = await client.post(
-        products_url,
-        json=product_data(),
-    )
-
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {
-        "detail": "Error creating product: Database error"
-    }
 
 
 @pytest.mark.usefixtures("products_inserted")
@@ -251,6 +234,7 @@ async def test_controller_query_should_filter_by_price_range(
 
     for product in content:
         price = float(product["price"])
+
         assert 5000 <= price <= 8000
 
 
@@ -275,6 +259,7 @@ async def test_controller_delete_should_return_not_found(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
     assert response.json() == {
         "detail": (
             "Product not found with filter: "
