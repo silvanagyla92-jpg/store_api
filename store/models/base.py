@@ -1,22 +1,44 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
-import uuid
+from typing import Annotated, Optional
+
 from bson import Decimal128
-from pydantic import UUID4, BaseModel, Field, model_serializer
+from pydantic import AfterValidator, Field
+
+from store.schemas.base import BaseSchemaMixin, OutSchema
 
 
-class CreateBaseModel(BaseModel):
-    id: UUID4 = Field(default_factory=uuid.uuid4)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+class ProductBase(BaseSchemaMixin):
+    name: str = Field(..., description="Product name")
+    quantity: int = Field(..., description="Product quantity")
+    price: Decimal = Field(..., description="Product price")
+    status: bool = Field(..., description="Product status")
 
-    @model_serializer
-    def set_model(self) -> dict[str, Any]:
-        self_dict = dict(self)
 
-        for key, value in self_dict.items():
-            if isinstance(value, Decimal):
-                self_dict[key] = Decimal128(str(value))
+class ProductIn(ProductBase, BaseSchemaMixin):
+    ...
 
-        return self_dict
+
+class ProductOut(ProductIn, OutSchema):
+    ...
+
+
+def convert_decimal_128(v):
+    return Decimal128(str(v))
+
+
+Decimal_ = Annotated[Decimal, AfterValidator(convert_decimal_128)]
+
+
+class ProductUpdate(BaseSchemaMixin):
+    quantity: Optional[int] = Field(None, description="Product quantity")
+    price: Optional[Decimal_] = Field(None, description="Product price")
+    status: Optional[bool] = Field(None, description="Product status")
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Product update date"
+    )
+
+
+class ProductUpdateOut(ProductOut):
+    ...
