@@ -1,9 +1,10 @@
+from decimal import Decimal
 from typing import List
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from pydantic import UUID4
 
-from store.core.exceptions import CreateException, NotFoundException
+from store.core.exceptions import NotFoundException
 from store.schemas.product import (
     ProductIn,
     ProductOut,
@@ -21,13 +22,7 @@ async def post(
     body: ProductIn = Body(...),
     usecase: ProductUsecase = Depends(),
 ) -> ProductOut:
-    try:
-        return await usecase.create(body=body)
-    except CreateException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=exc.message,
-        ) from exc
+    return await usecase.create(body=body)
 
 
 @router.get(path="/{id}", status_code=status.HTTP_200_OK)
@@ -41,14 +36,19 @@ async def get(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=exc.message,
-        ) from exc
+        )
 
 
 @router.get(path="/", status_code=status.HTTP_200_OK)
 async def query(
+    min_price: Decimal | None = Query(default=None),
+    max_price: Decimal | None = Query(default=None),
     usecase: ProductUsecase = Depends(),
 ) -> List[ProductOut]:
-    return await usecase.query()
+    return await usecase.query(
+        min_price=min_price,
+        max_price=max_price,
+    )
 
 
 @router.patch(path="/{id}", status_code=status.HTTP_200_OK)
@@ -63,7 +63,7 @@ async def patch(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=exc.message,
-        ) from exc
+        )
 
 
 @router.delete(path="/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -77,4 +77,4 @@ async def delete(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=exc.message,
-        ) from exc
+        )
