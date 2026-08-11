@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 from uuid import UUID
 
@@ -23,7 +24,6 @@ class ProductUsecase:
 
     async def create(self, body: ProductIn) -> ProductOut:
         product_model = ProductModel(**body.model_dump())
-
         await self.collection.insert_one(product_model.model_dump())
 
         return ProductOut(**product_model.model_dump())
@@ -49,9 +49,14 @@ class ProductUsecase:
         id: UUID,
         body: ProductUpdate
     ) -> ProductUpdateOut:
+        update_data = body.model_dump(exclude_none=True)
+
+        if "updated_at" not in update_data:
+            update_data["updated_at"] = datetime.utcnow()
+
         result = await self.collection.find_one_and_update(
             filter={"id": id},
-            update={"$set": body.model_dump(exclude_none=True)},
+            update={"$set": update_data},
             return_document=pymongo.ReturnDocument.AFTER,
         )
 
