@@ -5,7 +5,7 @@ from uuid import UUID
 import pymongo
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
-from store.core.exceptions import NotFoundException
+from store.core.exceptions import CreateException, NotFoundException
 from store.db.mongo import db_client
 from store.models.product import ProductModel
 from store.schemas.product import (
@@ -24,7 +24,13 @@ class ProductUsecase:
 
     async def create(self, body: ProductIn) -> ProductOut:
         product_model = ProductModel(**body.model_dump())
-        await self.collection.insert_one(product_model.model_dump())
+
+        try:
+            await self.collection.insert_one(product_model.model_dump())
+        except Exception as exc:
+            raise CreateException(
+                message=f"Error creating product: {exc}"
+            ) from exc
 
         return ProductOut(**product_model.model_dump())
 
@@ -47,7 +53,7 @@ class ProductUsecase:
     async def update(
         self,
         id: UUID,
-        body: ProductUpdate
+        body: ProductUpdate,
     ) -> ProductUpdateOut:
         update_data = body.model_dump(exclude_none=True)
 
