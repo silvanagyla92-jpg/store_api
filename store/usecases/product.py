@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import List
+from decimal import Decimal
+from typing import List, Optional
 from uuid import UUID
 
 import pymongo
@@ -44,10 +45,25 @@ class ProductUsecase:
 
         return ProductOut(**result)
 
-    async def query(self) -> List[ProductOut]:
+    async def query(
+        self,
+        min_price: Optional[Decimal] = None,
+        max_price: Optional[Decimal] = None,
+    ) -> List[ProductOut]:
+        filters = {}
+
+        if min_price is not None:
+            filters["price"] = {"$gte": min_price}
+
+        if max_price is not None:
+            if "price" in filters:
+                filters["price"]["$lte"] = max_price
+            else:
+                filters["price"] = {"$lte": max_price}
+
         return [
             ProductOut(**item)
-            async for item in self.collection.find()
+            async for item in self.collection.find(filters)
         ]
 
     async def update(
