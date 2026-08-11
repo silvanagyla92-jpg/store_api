@@ -1,7 +1,7 @@
 ```python
 from datetime import datetime
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import pymongo
@@ -50,8 +50,8 @@ class ProductUsecase:
 
     async def query(
         self,
-        min_price: Decimal | None = None,
-        max_price: Decimal | None = None,
+        min_price: Optional[Decimal] = None,
+        max_price: Optional[Decimal] = None,
     ) -> List[ProductOut]:
 
         filters = {}
