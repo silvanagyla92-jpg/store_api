@@ -1,6 +1,7 @@
+```python
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 import pymongo
@@ -27,7 +28,9 @@ class ProductUsecase:
         product_model = ProductModel(**body.model_dump())
 
         try:
-            await self.collection.insert_one(product_model.model_dump())
+            await self.collection.insert_one(
+                product_model.model_dump()
+            )
         except Exception as exc:
             raise CreateException(
                 message=f"Error creating product: {exc}"
@@ -47,9 +50,10 @@ class ProductUsecase:
 
     async def query(
         self,
-        min_price: Optional[Decimal] = None,
-        max_price: Optional[Decimal] = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
     ) -> List[ProductOut]:
+
         filters = {}
 
         if min_price is not None:
@@ -71,6 +75,7 @@ class ProductUsecase:
         id: UUID,
         body: ProductUpdate,
     ) -> ProductUpdateOut:
+
         update_data = body.model_dump(exclude_none=True)
 
         if "updated_at" not in update_data:
@@ -103,3 +108,4 @@ class ProductUsecase:
 
 
 product_usecase = ProductUsecase()
+```
