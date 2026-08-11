@@ -169,6 +169,91 @@ async def test_controller_patch_should_allow_update_updated_at(
     assert content["updated_at"].startswith("2026-08-01T12:00:00")
 
 
+async def test_controller_create_should_return_bad_request_when_insert_fails(
+    client,
+    products_url,
+    monkeypatch,
+):
+    async def mock_insert_one(*args, **kwargs):
+        raise Exception("Database error")
+
+    from store.usecases.product import product_usecase
+
+    monkeypatch.setattr(
+        product_usecase.collection,
+        "insert_one",
+        mock_insert_one,
+    )
+
+    response = await client.post(
+        products_url,
+        json=product_data(),
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {
+        "detail": "Error creating product: Database error"
+    }
+
+
+@pytest.mark.usefixtures("products_inserted")
+async def test_controller_query_should_filter_by_min_price(
+    client,
+    products_url,
+):
+    response = await client.get(
+        f"{products_url}?min_price=6000"
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    content = response.json()
+
+    assert len(content) == 2
+
+    for product in content:
+        assert float(product["price"]) >= 6000
+
+
+@pytest.mark.usefixtures("products_inserted")
+async def test_controller_query_should_filter_by_max_price(
+    client,
+    products_url,
+):
+    response = await client.get(
+        f"{products_url}?max_price=6000"
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    content = response.json()
+
+    assert len(content) == 2
+
+    for product in content:
+        assert float(product["price"]) <= 6000
+
+
+@pytest.mark.usefixtures("products_inserted")
+async def test_controller_query_should_filter_by_price_range(
+    client,
+    products_url,
+):
+    response = await client.get(
+        f"{products_url}?min_price=5000&max_price=8000"
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    content = response.json()
+
+    assert len(content) == 2
+
+    for product in content:
+        price = float(product["price"])
+        assert 5000 <= price <= 8000
+
+
 async def test_controller_delete_should_return_no_content(
     client,
     products_url,
