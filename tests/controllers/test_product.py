@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 import pytest
@@ -121,6 +122,29 @@ async def test_controller_patch_should_return_not_found(
             "4fd7cd35-a3a0-4c1f-a78d-d24aa81e7dca"
         )
     }
+
+
+async def test_controller_patch_should_update_updated_at(
+    client,
+    products_url,
+    product_inserted,
+):
+    old_updated_at = product_inserted.updated_at
+
+    response = await client.patch(
+        f"{products_url}{product_inserted.id}",
+        json={"price": "7.500"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+    content = response.json()
+
+    new_updated_at = datetime.fromisoformat(
+        content["updated_at"].replace("Z", "+00:00")
+    )
+
+    assert new_updated_at > old_updated_at
 
 
 async def test_controller_delete_should_return_no_content(
